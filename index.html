@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web3 Threat Monitoring Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-h: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .transaction-row {
+            transition: all 0.3s ease;
+        }
+        .transaction-row:hover {
+            background-color: #f8fafc;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(226, 232, 240, 1);
+        }
+        @keyframes pulse-red {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .critical-alert {
+            animation: pulse-red 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-slate-900 font-sans leading-normal">
+
+    <!-- Chosen Palette: Security Neutral & Alert Accents (Stone-50 background, Slate text, Indigo/Amber/Rose accents) -->
+    
+    <!-- Application Structure Plan: 
+         The SPA is organized into four strategic areas to mirror the Source Report's architecture:
+         1. Executive Overview: Real-time high-level stats showing ingestion speed and alert counts.
+         2. Live Mempool Stream: A simulated functional interface showing raw transaction data being parsed via 'Viem/Alloy' logic.
+         3. Threat Analysis & Logic: Visualization of the Risk Score formula and detection categories (Forta, Slither).
+         4. Stack Deep-Dive: Interactive documentation of the specific open-source tools (Reth, Subsquid, Anvil) used at each layer.
+         This structure was chosen to allow users to see the immediate 'output' of the stack while exploring the 'components' that make it possible.
+    -->
+
+    <!-- Visualization & Content Choices: 
+         - Real-time Line Chart: Shows monitoring latency and threat volume over time (Goal: Change, Tool: Chart.js).
+         - Distribution Donut: Breaks down detected threats by category (Goal: Inform, Tool: Chart.js).
+         - Dynamic Table: Interactive list of pending transactions with 'Risk Score' logic (Goal: Organize, Tool: Vanilla JS).
+         - Interactive Formula Simulator: Allows users to adjust weights (w1, w2, w3) for the heuristic risk score (Goal: Compare/Relationship, Tool: Vanilla JS).
+         - Confirming NO SVG/Mermaid: All icons are Unicode and all charts use Canvas.
+    -->
+
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <header class="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur">
+        <div class="container mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <span class="text-2xl">🛡️</span>
+                <h1 class="text-xl font-bold tracking-tight">Sentineth <span class="text-indigo-600">v1.0</span></h1>
+            </div>
+            <nav class="hidden md:flex space-x-6 text-sm font-medium">
+                <button onclick="scrollToSection('monitor')" class="hover:text-indigo-600 transition">Monitor</button>
+                <button onclick="scrollToSection('analytics')" class="hover:text-indigo-600 transition">Analytics</button>
+                <button onclick="scrollToSection('stack')" class="hover:text-indigo-600 transition">The Stack</button>
+                <button onclick="scrollToSection('simulator')" class="hover:text-indigo-600 transition">Risk Simulator</button>
+            </nav>
+            <div class="flex items-center space-x-4">
+                <span class="flex items-center space-x-1">
+                    <span class="h-2 w-2 rounded-full bg-green-500"></span>
+                    <span class="text-xs font-mono text-slate-500 uppercase tracking-widest">Reth Mainnet Connected</span>
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8 max-w-7xl">
+
+        <!-- Introduction Section -->
+        <section class="mb-12">
+            <h2 class="text-3xl font-extrabold text-slate-900 mb-4 text-center">Real-Time Threat Monitoring Ecosystem</h2>
+            <p class="text-lg text-slate-600 text-center max-w-3xl mx-auto">
+                This dashboard visualizes the performance and capabilities of a high-speed Web3 security stack. Utilizing <strong>Reth</strong> for ingestion, <strong>Forta</strong> for detection, and <strong>Anvil</strong> for simulation, we process live transactions to identify vulnerabilities before they exploit state.
+            </p>
+        </section>
+
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+            <div class="glass-panel p-6 rounded-xl shadow-sm">
+                <p class="text-sm font-medium text-slate-500">Avg. Ingestion Latency</p>
+                <p class="text-3xl font-bold text-indigo-600" id="stat-latency">42ms</p>
+                <p class="text-xs text-green-600 mt-1">↑ Optimized via Reth/Alloy</p>
+            </div>
+            <div class="glass-panel p-6 rounded-xl shadow-sm">
+                <p class="text-sm font-medium text-slate-500">Txs Scanned (24h)</p>
+                <p class="text-3xl font-bold text-slate-900" id="stat-scanned">142,850</p>
+                <p class="text-xs text-slate-400 mt-1">Sourced from Subsquid Lake</p>
+            </div>
+            <div class="glass-panel p-6 rounded-xl shadow-sm">
+                <p class="text-sm font-medium text-slate-500">Critical Alerts</p>
+                <p class="text-3xl font-bold text-rose-600" id="stat-alerts">12</p>
+                <p class="text-xs text-rose-400 mt-1">Requires immediate Anvil fork</p>
+            </div>
+            <div class="glass-panel p-6 rounded-xl shadow-sm">
+                <p class="text-sm font-medium text-slate-500">Active Security Bots</p>
+                <p class="text-3xl font-bold text-amber-600">84</p>
+                <p class="text-xs text-slate-400 mt-1">Forta SDK Agent nodes</p>
+            </div>
+        </div>
+
+        <!-- Monitoring & Analytics Grid -->
+        <div id="monitor" class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+            
+            <!-- Live Monitor Column -->
+            <div class="lg:col-span-2 flex flex-col space-y-4">
+                <div class="glass-panel rounded-xl shadow-sm overflow-hidden flex flex-col h-full">
+                    <div class="px-6 py-4 border-b bg-slate-50 flex justify-between items-center">
+                        <div>
+                            <h3 class="font-bold text-slate-800">Live Mempool Stream</h3>
+                            <p class="text-xs text-slate-500">Real-time decoding via Viem SDK</p>
+                        </div>
+                        <span class="px-3 py-1 bg-indigo-100 text-indigo-700 text-xs font-bold rounded-full animate-pulse">LIVE</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="text-xs font-semibold text-slate-400 uppercase bg-slate-50/50">
+                                    <th class="px-6 py-3">Tx Hash</th>
+                                    <th class="px-6 py-3">Method</th>
+                                    <th class="px-6 py-3">Value</th>
+                                    <th class="px-6 py-3 text-right">Risk Score</th>
+                                </tr>
+                            </thead>
+                            <tbody id="transaction-feed" class="text-sm divide-y divide-slate-100">
+                                <!-- Rows dynamic -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visualization Column -->
+            <div id="analytics" class="flex flex-col space-y-6">
+                <div class="glass-panel p-6 rounded-xl shadow-sm">
+                    <h3 class="font-bold text-slate-800 mb-4">Threat Vectors</h3>
+                    <p class="text-xs text-slate-500 mb-4">Distribution of detection bot triggers over the last 1,000 blocks.</p>
+                    <div class="chart-container">
+                        <canvas id="threatTypeChart"></canvas>
+                    </div>
+                </div>
+                <div class="glass-panel p-6 rounded-xl shadow-sm">
+                    <h3 class="font-bold text-slate-800 mb-4">Network Pressure</h3>
+                    <p class="text-xs text-slate-500 mb-4">Tracking gas price vs detection latency (ms).</p>
+                    <div class="chart-container">
+                        <canvas id="latencyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk Simulator Section -->
+        <section id="simulator" class="mb-12">
+            <div class="bg-indigo-900 text-white rounded-2xl p-8 shadow-xl">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                    <div>
+                        <h2 class="text-2xl font-bold mb-4">Interactive Heuristic Simulator</h2>
+                        <p class="text-indigo-200 mb-6 leading-relaxed">
+                            Fine-tune your threat detection engine. Adjust the weights (w) to see how the mathematical model evaluates risks for a standard transaction. This logic is executed programmatically within the Detection Engine layer.
+                        </p>
+                        <div class="space-y-6">
+                            <div>
+                                <label class="flex justify-between text-sm mb-2">
+                                    <span>w₁: Value Transferred Weight</span>
+                                    <span id="w1-val" class="font-mono text-indigo-300">0.5</span>
+                                </label>
+                                <input type="range" min="0" max="1" step="0.1" value="0.5" class="w-full h-2 bg-indigo-700 rounded-lg appearance-none cursor-pointer" id="w1-slider">
+                            </div>
+                            <div>
+                                <label class="flex justify-between text-sm mb-2">
+                                    <span>w₂: Gas Limit Weight</span>
+                                    <span id="w2-val" class="font-mono text-indigo-300">0.3</span>
+                                </label>
+                                <input type="range" min="0" max="1" step="0.1" value="0.3" class="w-full h-2 bg-indigo-700 rounded-lg appearance-none cursor-pointer" id="w2-slider">
+                            </div>
+                            <div>
+                                <label class="flex justify-between text-sm mb-2">
+                                    <span>w₃: Contract Complexity</span>
+                                    <span id="w3-val" class="font-mono text-indigo-300">0.2</span>
+                                </label>
+                                <input type="range" min="0" max="1" step="0.1" value="0.2" class="w-full h-2 bg-indigo-700 rounded-lg appearance-none cursor-pointer" id="w3-slider">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-white/10 rounded-xl p-8 border border-white/20 text-center">
+                        <p class="text-indigo-200 text-sm uppercase tracking-widest mb-2">Simulated Risk Score</p>
+                        <div class="text-7xl font-black mb-4" id="simulated-result">4.2</div>
+                        <p id="risk-rating" class="inline-block px-4 py-1 rounded-full text-xs font-bold uppercase bg-amber-500 text-white">Moderate Concern</p>
+                        <div class="mt-8 text-left space-y-2 font-mono text-xs text-indigo-200 opacity-80">
+                            <p>// Heuristic Equation</p>
+                            <p>Risk = (Value * w1) + (Gas * w2) + (Complexity * w3)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tool Stack Deep Dive -->
+        <section id="stack" class="mb-12">
+            <h2 class="text-2xl font-bold text-slate-800 mb-6">Open-Source Core Components</h2>
+            <p class="text-slate-600 mb-8 max-w-2xl">The monitoring platform is built upon high-performance, modular tools. Click each layer to understand its role in the security lifecycle.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Layer 1 -->
+                <div class="glass-panel p-6 rounded-xl hover:shadow-md transition cursor-pointer group">
+                    <div class="h-10 w-10 bg-indigo-100 rounded-lg flex items-center justify-center text-xl mb-4 group-hover:bg-indigo-600 group-hover:text-white transition">⛓️</div>
+                    <h3 class="font-bold text-slate-800 mb-2">Node Ingestion</h3>
+                    <p class="text-sm text-slate-500 leading-relaxed mb-4">Leveraging <strong>Reth</strong> for modular, high-speed execution tracing and <strong>Helios</strong> for light client verification.</p>
+                    <span class="text-xs font-bold text-indigo-600">TOOL: RUST / ALLOY</span>
+                </div>
+                <!-- Layer 2 -->
+                <div class="glass-panel p-6 rounded-xl hover:shadow-md transition cursor-pointer group">
+                    <div class="h-10 w-10 bg-amber-100 rounded-lg flex items-center justify-center text-xl mb-4 group-hover:bg-amber-600 group-hover:text-white transition">📊</div>
+                    <h3 class="font-bold text-slate-800 mb-2">Real-Time Indexing</h3>
+                    <p class="text-sm text-slate-500 leading-relaxed mb-4">Using <strong>Subsquid (Squid SDK)</strong> to process logs at thousands of blocks per second without JSON-RPC lag.</p>
+                    <span class="text-xs font-bold text-amber-600">TOOL: SUBSQUID / KAFKA</span>
+                </div>
+                <!-- Layer 3 -->
+                <div class="glass-panel p-6 rounded-xl hover:shadow-md transition cursor-pointer group">
+                    <div class="h-10 w-10 bg-rose-100 rounded-lg flex items-center justify-center text-xl mb-4 group-hover:bg-rose-600 group-hover:text-white transition">🔍</div>
+                    <h3 class="font-bold text-slate-800 mb-2">Detection Logic</h3>
+                    <p class="text-sm text-slate-500 leading-relaxed mb-4"><strong>Forta SDK</strong> bots running custom heuristics for reentrancy, flash loans, and malicious state changes.</p>
+                    <span class="text-xs font-bold text-rose-600">TOOL: FORTA / SLITHER</span>
+                </div>
+                <!-- Layer 4 -->
+                <div class="glass-panel p-6 rounded-xl hover:shadow-md transition cursor-pointer group">
+                    <div class="h-10 w-10 bg-green-100 rounded-lg flex items-center justify-center text-xl mb-4 group-hover:bg-green-600 group-hover:text-white transition">🧪</div>
+                    <h3 class="font-bold text-slate-800 mb-2">Local Sandbox</h3>
+                    <p class="text-sm text-slate-500 leading-relaxed mb-4">Using <strong>Anvil (Foundry)</strong> to fork mainnet state and safely simulate exploit outcomes before alerting.</p>
+                    <span class="text-xs font-bold text-green-600">TOOL: FOUNDRY / ANVIL</span>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white border-t py-12">
+        <div class="container mx-auto px-4 text-center">
+            <div class="flex justify-center space-x-6 mb-4 text-slate-400">
+                <span class="text-xs uppercase tracking-widest font-bold">Latency: 0.8ms</span>
+                <span class="text-xs uppercase tracking-widest font-bold">Uptime: 99.99%</span>
+                <span class="text-xs uppercase tracking-widest font-bold">Node: Reth-v1.2.0</span>
+            </div>
+            <p class="text-sm text-slate-500">© 2024 Sentineth Threat Labs. Based on the Open-Source Security Blueprint.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Data Store
+        const transactionTypes = ['swap()', 'flashLoan()', 'execute()', 'transfer()', 'deposit()', 'withdraw()', 'approve()'];
+        const threatDistribution = [45, 25, 15, 10, 5];
+        const threatLabels = ['Anomalous Vol', 'Contract Exploit', 'Front-run', 'Social Eng', 'Flash-Loan Attack'];
+        
+        let txCount = 142850;
+        let alertCount = 12;
+        let latencyChart, threatChart;
+
+        // Initialize Charts
+        function initCharts() {
+            // Threat Type Donut
+            const ctxThreat = document.getElementById('threatTypeChart').getContext('2d');
+            threatChart = new Chart(ctxThreat, {
+                type: 'doughnut',
+                data: {
+                    labels: threatLabels,
+                    datasets: [{
+                        data: threatDistribution,
+                        backgroundColor: ['#6366f1', '#f59e0b', '#f43f5e', '#ec4899', '#8b5cf6'],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } }
+                    },
+                    cutout: '70%'
+                }
+            });
+
+            // Latency Line Chart
+            const ctxLatency = document.getElementById('latencyChart').getContext('2d');
+            latencyChart = new Chart(ctxLatency, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 12}, (_, i) => `${i*2}h ago`).reverse(),
+                    datasets: [{
+                        label: 'Latency (ms)',
+                        data: [45, 42, 50, 48, 41, 39, 44, 46, 42, 40, 43, 42],
+                        borderColor: '#6366f1',
+                        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: false, display: false },
+                        x: { display: false }
+                    }
+                }
+            });
+        }
+
+        // Live Transaction Generator
+        function addTransaction() {
+            const tbody = document.getElementById('transaction-feed');
+            const hash = '0x' + Math.random().toString(16).slice(2, 10) + '...' + Math.random().toString(16).slice(2, 6);
+            const method = transactionTypes[Math.floor(Math.random() * transactionTypes.length)];
+            const val = (Math.random() * 50).toFixed(2);
+            const risk = (Math.random() * 10).toFixed(1);
+            
+            const row = document.createElement('tr');
+            row.className = 'transaction-row group';
+            
+            let riskColor = 'text-slate-500';
+            let riskBg = 'bg-slate-100';
+            if (risk > 7) { 
+                riskColor = 'text-rose-600 font-bold'; 
+                riskBg = 'bg-rose-50';
+                alertCount++;
+                document.getElementById('stat-alerts').innerText = alertCount;
+            } else if (risk > 4) {
+                riskColor = 'text-amber-600';
+                riskBg = 'bg-amber-50';
+            }
+
+            row.innerHTML = `
+                <td class="px-6 py-4 font-mono text-xs text-indigo-500">${hash}</td>
+                <td class="px-6 py-4 font-medium text-slate-700">${method}</td>
+                <td class="px-6 py-4 text-slate-500">${val} ETH</td>
+                <td class="px-6 py-4 text-right">
+                    <span class="px-2 py-1 rounded text-xs ${riskColor} ${riskBg}">${risk}</span>
+                </td>
+            `;
+
+            tbody.prepend(row);
+            if (tbody.children.length > 8) {
+                tbody.removeChild(tbody.lastChild);
+            }
+
+            txCount++;
+            document.getElementById('stat-scanned').innerText = txCount.toLocaleString();
+            
+            // Randomly update latency
+            document.getElementById('stat-latency').innerText = (40 + Math.random() * 10).toFixed(0) + 'ms';
+        }
+
+        // Risk Simulator Logic
+        function updateSimulator() {
+            const w1 = parseFloat(document.getElementById('w1-slider').value);
+            const w2 = parseFloat(document.getElementById('w2-slider').value);
+            const w3 = parseFloat(document.getElementById('w3-slider').value);
+
+            document.getElementById('w1-val').innerText = w1.toFixed(1);
+            document.getElementById('w2-val').innerText = w2.toFixed(1);
+            document.getElementById('w3-val').innerText = w3.toFixed(1);
+
+            // Mock Baseline Values for a sample risky transaction
+            const baseVal = 10; // 10 ETH
+            const baseGas = 5;  // Complexity/Gas multiplier
+            const baseComp = 8; // Internal call count
+
+            const score = (baseVal * w1) + (baseGas * w2) + (baseComp * w3);
+            const displayScore = Math.min(score, 10).toFixed(1);
+            
+            const resEl = document.getElementById('simulated-result');
+            const ratingEl = document.getElementById('risk-rating');
+            resEl.innerText = displayScore;
+
+            if (displayScore > 8) {
+                ratingEl.innerText = 'CRITICAL ALERT';
+                ratingEl.className = 'inline-block px-4 py-1 rounded-full text-xs font-bold uppercase bg-rose-600 text-white critical-alert';
+            } else if (displayScore > 5) {
+                ratingEl.innerText = 'Moderate Concern';
+                ratingEl.className = 'inline-block px-4 py-1 rounded-full text-xs font-bold uppercase bg-amber-500 text-white';
+            } else {
+                ratingEl.innerText = 'Safe Baseline';
+                ratingEl.className = 'inline-block px-4 py-1 rounded-full text-xs font-bold uppercase bg-green-500 text-white';
+            }
+        }
+
+        function scrollToSection(id) {
+            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Init
+        window.onload = () => {
+            initCharts();
+            setInterval(addTransaction, 2500);
+            
+            // Simulator Listeners
+            ['w1-slider', 'w2-slider', 'w3-slider'].forEach(id => {
+                document.getElementById(id).addEventListener('input', updateSimulator);
+            });
+            updateSimulator();
+        };
+    </script>
+</body>
+</html>
